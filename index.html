@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="theme-color" content="#f7f7f3">
+  <meta name="description" content="TOUCHLINE: aktuelle Spielstände, Ergebnisse und Ansetzungen im Frauenfußball und stündliches Wetter am Referenzort München.">
+  <title>TOUCHLINE — Frauenfußball live</title>
+  <style>
+/* Gemeinsame Struktur, Barrierefreiheit und Komponenten. Die visuellen Systeme folgen separat. */
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; }
+button, input { font: inherit; }
+button { cursor: pointer; }
+button:disabled { opacity: .52; cursor: progress; }
+a { color: inherit; }
+[hidden] { display: none !important; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.skip-link { position: fixed; top: -60px; left: 16px; z-index: 99; padding: 10px 16px; background: #fff; color: #111; }
+.skip-link:focus { top: 12px; }
+:focus-visible { outline: 2px solid var(--focus, #86f342); outline-offset: 4px; }
+.site-shell { min-height: 100vh; overflow: clip; }
+.site-header, .main-nav, .brand, .header-right, .hero__actions, .hero__summary, .section-heading, .filter-row, .filters, .results-heading, .match-card__meta, .match-card__main, .club, .panel-topline, .weather-primary, .weather-details, .footer-top, .footer-bottom { display: flex; }
+.site-header, .section-heading, .results-heading, .panel-topline, .footer-top, .footer-bottom { justify-content: space-between; align-items: center; }
+.brand { text-decoration: none; align-items: center; gap: 10px; flex-shrink: 0; }
+.brand__icon { width: 27px; height: 27px; position: relative; flex-shrink: 0; display: grid; place-items: center; }
+.brand__icon span { width: 9px; height: 9px; border-radius: 50%; }
+.main-nav { align-items: center; gap: 28px; }
+.main-nav a { text-decoration: none; }
+.header-live { display: inline-flex; align-items: center; gap: 9px; white-space: nowrap; }
+.pulse { flex: 0 0 auto; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 12%, transparent); }
+.has-live-match .header-live .pulse { animation: pulsing 1.7s infinite; }
+@keyframes pulsing { 50% { box-shadow: 0 0 0 9px transparent; } }
+.hero { position: relative; isolation: isolate; }
+.hero__decoration { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+.hero__ball { position: absolute; }
+.eyebrow { display: flex; align-items: center; gap: 10px; margin: 0; }
+.eyebrow__line { display: inline-block; width: 23px; height: 2px; background: currentColor; }
+.hero h1 { margin: 0; }
+.hero h1 em { font-style: normal; }
+.hero__actions { flex-wrap: wrap; align-items: center; gap: 20px; }
+.primary-link { display: inline-flex; align-items: center; justify-content: center; gap: 32px; text-decoration: none; white-space: nowrap; }
+.hero__hint { display: inline-flex; align-items: center; gap: 10px; }
+.hero__summary { align-items: stretch; }
+.metric { display: flex; flex-direction: column; }
+.metric strong { font-variant-numeric: tabular-nums; }
+.metric span { display: block; }
+.content-grid { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(290px, 1fr); }
+.games-section, .side-column { min-width: 0; }
+.section-heading { align-items: flex-end; gap: 12px; }
+.section-heading h2, .spotlight h2, .weather-panel h2, .about h2 { margin: 0; }
+.refresh-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex-shrink: 0; }
+.filters { flex-direction: column; gap: 14px; }
+.filter-row { align-items: center; flex-wrap: wrap; gap: 7px; }
+.filter-status, .filter-league { border: 0; }
+.filter-dot { display: inline-block; height: 6px; width: 6px; margin-left: 5px; border-radius: 50%; background: currentColor; }
+.search-box { position: relative; display: block; }
+.search-box__icon { position: absolute; left: 14px; top: 50%; transform: translateY(-52%); font-size: 25px; pointer-events: none; }
+.search-box input { width: 100%; border: 0; padding: 12px 15px 12px 42px; outline-offset: 2px; }
+.results-heading h3 { margin: 0; display: flex; align-items: center; gap: 10px; }
+.match-list { display: flex; flex-direction: column; }
+.match-card { min-width: 0; }
+.match-card__meta { align-items: center; gap: 10px; }
+.match-card__phase { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; }
+.match-card__main { align-items: center; justify-content: space-between; gap: 10px; }
+.club { min-width: 0; flex: 1 1 0; align-items: center; gap: 10px; }
+.club--away { flex-direction: row-reverse; text-align: right; }
+.club__mark { display: inline-grid; place-items: center; flex: 0 0 auto; }
+.club__name { overflow-wrap: anywhere; }
+.match-card__score { text-align: center; flex-shrink: 0; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.match-card__venue { margin: 10px 0 0; }
+.empty-state, .placeholder { text-align: center; }
+.show-more { width: 100%; }
+.side-column { display: flex; flex-direction: column; }
+.weather-primary { align-items: center; justify-content: space-between; gap: 10px; }
+.weather-details { justify-content: space-between; gap: 10px; }
+.weather-details > div { display: flex; flex-direction: column; gap: 7px; }
+.weather-location { display: flex; align-items: center; gap: 7px; }
+.weather-source a, .footer-bottom a { text-underline-offset: 3px; }
+.about__items { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.about__items h3 { margin: 0; }
+.footer-top, .footer-bottom { gap: 16px; flex-wrap: wrap; }
+.notice { margin: 0 0 18px; padding: 13px 16px; border-radius: 8px; font-size: 13px; }
+@media (max-width: 900px) {
+  .content-grid { grid-template-columns: minmax(0, 1fr); }
+  .side-column { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .main-nav a:nth-child(3) { display: none; }
+  .main-nav { gap: 12px; }
+  .header-live { font-size: 10px; }
+  .hero__summary { flex-wrap: wrap; }
+  .side-column { grid-template-columns: 1fr; }
+  .about__items { grid-template-columns: 1fr; }
+  .section-heading { align-items: flex-start; }
+  .results-heading { align-items: flex-start; }
+  .club { gap: 6px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+
+/* B — STUDIO / EDITORIAL: hell, kompakt, typografisch, mit ultramarinblauen Akzenten. */
+:root { --ink: #20212b; --muted: #757681; --accent: #4555ee; --line: #e5e5e8; --focus: #4555ee; }
+body { background: #f7f7f4; color: var(--ink); font-family: 'Helvetica Neue', Arial, Helvetica, sans-serif; font-size: 13px; }
+.site-shell { background: #f7f7f4; }
+.site-header { max-width: 1430px; margin: auto; padding: 23px 4.5%; gap: 24px; background: #f7f7f4; border-bottom: 1px solid #e6e6e3; }
+.brand__icon { background: var(--accent); border-radius: 7px; transform: rotate(-11deg); }
+.brand__icon:before { content: ''; position: absolute; width: 18px; height: 2px; background: white; transform: rotate(-35deg); }
+.brand__icon:after { content: ''; position: absolute; width: 8px; height: 8px; border: 2px solid white; border-radius: 50%; right: 2px; top: 2px; }
+.brand__icon span { display: none; }
+.brand__name, .footer-brand { font-size: 20px; letter-spacing: -1px; font-weight: 950; }
+.brand__point, .heading-period { color: var(--accent); }
+.main-nav { margin-left: auto; }
+.main-nav a { color: #6c6e78; font-weight: 650; font-size: 12px; transition: color .2s; }
+.main-nav a:hover { color: var(--accent); }
+.header-right { border-left: 1px solid #e2e2e3; padding-left: 25px; }
+.header-live { border-radius: 50px; color: #333b8d; background: #e9eafd; padding: 9px 12px; font-size: 10px; letter-spacing: .7px; font-weight: 750; }
+.header-live .pulse { color: var(--accent); }
+.hero { max-width: 1430px; margin: 0 auto; padding: 76px 4.5% 48px; display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(280px, .65fr); grid-template-rows: auto auto; column-gap: 7%; background: #f7f7f4; min-height: 465px; }
+.hero__decoration { left: auto; width: 31%; right: 4.5%; top: 45px; bottom: 134px; background: #e8eafb; border-radius: 18px; transform: rotate(3deg); }
+.hero__decoration:before { content: '↗'; position: absolute; right: 20px; top: 16px; font-size: 28px; font-weight: 200; color: #4555ee; }
+.hero__circle { position: absolute; width: 172px; height: 172px; border: 16px solid #ccd0f6; border-radius: 50%; left: 50%; top: 50%; transform: translate(-50%, -43%); }
+.hero__ball { display: none; }
+.hero__content { grid-column: 1 / -1; position: relative; z-index: 1; }
+.eyebrow { font-size: 10px; font-weight: 820; letter-spacing: 1.8px; color: var(--accent); text-transform: uppercase; }
+.eyebrow__line { height: 5px; width: 5px; border-radius: 50%; }
+.hero h1 { font-size: clamp(62px, 7.3vw, 107px); line-height: 1.03; font-weight: 860; letter-spacing: -.076em; margin: 23px 0 0; max-width: 940px; }
+.hero h1 em { color: var(--accent); }
+.hero__intro { margin: 24px 0 23px; max-width: 480px; font-size: 15px; color: #666876; line-height: 1.7; }
+.primary-link { padding: 13px 17px; background: var(--accent); color: white; border-radius: 7px; font-size: 12px; font-weight: 750; transition: background .15s, transform .15s; }
+.primary-link:hover { background: #2639d7; transform: translateY(-1px); }
+.hero__hint { color: #898b97; font-size: 11px; max-width: 270px; line-height: 1.55; }
+.hero__hint .pulse { color: var(--accent); }
+.hero__summary { grid-column: 1 / -1; margin-top: 55px; border: 1px solid #e5e5ec; border-radius: 12px; padding: 15px; background: white; box-shadow: 0 12px 35px #22264608; }
+.metric { flex: 1 1 0; padding: 8px 25px; min-height: 64px; justify-content: center; border-right: 1px solid #e8e8ee; gap: 7px; }
+.metric:last-child { border-right: 0; }
+.metric strong { font-size: 30px; font-weight: 850; letter-spacing: -.06em; line-height: 1; }
+.metric:first-child strong { color: var(--accent); }
+.metric span { color: #777984; font-size: 11px; }
+.content-grid { max-width: 1430px; margin: 0 auto; padding: 25px 4.5% 0; gap: 24px; align-items: start; }
+.games-section { background: white; border: 1px solid var(--line); border-radius: 15px; padding: 29px; box-shadow: 0 5px 24px #1d1f4307; }
+.eyebrow--section { letter-spacing: 1.6px; font-size: 10px; }
+.section-heading h2, .spotlight h2, .weather-panel h2, .about h2 { font-size: clamp(29px, 3.2vw, 43px); font-weight: 850; letter-spacing: -.055em; line-height: 1.08; margin-top: 8px; }
+.section-subtitle { margin: 12px 0 22px; color: #777986; font-size: 12px; line-height: 1.7; }
+.refresh-btn { border: 1px solid #dedfe7; background: white; border-radius: 7px; padding: 10px 12px; color: #505262; font-size: 11px; font-weight: 700; }
+.refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+.refresh-btn span { font-size: 17px; }
+.filters { gap: 11px; border: 1px solid #e8e8ed; background: #f8f8fa; padding: 12px; border-radius: 10px; }
+.filter-status { border-radius: 6px; background: transparent; color: #747683; font-size: 11px; font-weight: 750; padding: 10px 12px; }
+.filter-status.is-active { background: #262935; color: white; }
+.filter-status:hover:not(.is-active) { background: #e9eaf1; }
+.filter-league { background: transparent; color: #737581; padding: 5px 8px; font-size: 11px; font-weight: 650; border-radius: 4px; }
+.filter-league.is-active { color: var(--accent); background: #e9eafb; }
+.filter-league:hover:not(.is-active) { background: #efeff4; }
+.search-box input { border: 1px solid #e3e4e9; background: white; color: #222537; border-radius: 6px; font-size: 12px; }
+.search-box input::placeholder { color: #a0a1ad; }
+.search-box__icon { color: #8288a4; }
+.results-heading { margin: 26px 0 12px; gap: 10px; }
+.results-heading h3 { font-size: 14px; letter-spacing: -.2px; }
+.result-count { background: #ededf4; color: #4e5065; border-radius: 50px; padding: 3px 9px; font-size: 11px; font-weight: 750; }
+.results-heading__caption { color: #999ba5; font-size: 10px; }
+.match-list { gap: 0; border-top: 1px solid #ededf0; }
+.match-card { background: white; padding: 18px 0; border-bottom: 1px solid #ededf0; transition: background .2s; }
+.match-card:hover { background: #f9f9fc; }
+.match-card--live { background: #f4f5ff; border-left: 3px solid var(--accent); padding-left: 12px; }
+.match-card__meta { margin-bottom: 14px; gap: 11px; }
+.match-card__league { color: var(--accent); background: #eff0ff; font-size: 10px; font-weight: 850; border-radius: 4px; padding: 4px 7px; }
+.match-card__date, .match-card__phase { color: #999aa5; font-size: 10px; font-weight: 660; }
+.match-card__phase.is-live { color: var(--accent); }
+.club__mark { background: #f1f1f5; border: 1px solid #e8e8eb; color: #4c4e61; font-size: 9px; font-weight: 850; width: 33px; height: 33px; border-radius: 9px; }
+.club__name { font-weight: 720; font-size: 12px; line-height: 1.42; }
+.match-card__score { min-width: 80px; font-size: 19px; font-weight: 850; letter-spacing: -.045em; }
+.match-card__venue { font-size: 10px; color: #9b9ba8; }
+.empty-state, .placeholder { padding: 34px 12px; color: #868894; font-size: 12px; line-height: 1.7; background: #f8f8fb; border: 1px dashed #dddeeb; border-radius: 8px; }
+.notice--error { background: #fff0ed; color: #a72f20; border: 1px solid #f2c4bc; }
+.notice--warning { background: #fffbea; color: #796327; border: 1px solid #ebdfa9; }
+.show-more { margin-top: 16px; padding: 12px; background: white; border: 1px solid #e4e4ed; border-radius: 7px; color: var(--accent); font-size: 11px; font-weight: 750; }
+.show-more:hover { background: #f7f7fb; }
+.side-column { gap: 16px; }
+.spotlight, .weather-panel { background: white; border: 1px solid #e6e6ec; border-radius: 15px; padding: 25px; box-shadow: 0 5px 24px #1d1f4307; }
+.panel-index { color: #9294a0; font-size: 10px; font-weight: 750; letter-spacing: 1.4px; }
+.little-star { color: var(--accent); font-size: 23px; }
+.spotlight h2, .weather-panel h2 { font-size: 27px; }
+.panel-desc { color: #858692; font-size: 11px; line-height: 1.6; }
+.spotlight .match-card { margin-top: 16px; padding: 13px; border: 1px solid #e7e7ed; border-radius: 8px; background: #fafafc; }
+.spotlight .match-card__meta { flex-wrap: wrap; }
+.spotlight .club { display: flex; flex-direction: column; text-align: left; align-items: flex-start; }
+.spotlight .club--away { align-items: flex-end; }
+.spotlight .club__name { font-size: 11px; }
+.spotlight .match-card__score { font-size: 19px; min-width: 62px; }
+.spotlight .placeholder { margin-top: 16px; }
+.weather-panel { background: #ecedfd; border-color: #e2e3fa; }
+.is-rainy .weather-panel { background: #dfe7f1; border-color: #b8cade; }
+.weather-symbol { color: var(--accent); font-size: 31px; min-height: 33px; }
+.weather-location { color: #444970; font-size: 11px; font-weight: 750; margin: 16px 0 8px; }
+.weather-location span { font-size: 18px; }
+.weather-caption { color: #7a7da0; font-size: 11px; line-height: 1.65; margin: 0; }
+.weather-primary { align-items: end; gap: 15px; margin-top: 22px; }
+.weather-primary strong { color: #262c80; font-size: 65px; letter-spacing: -.095em; font-weight: 850; line-height: .94; }
+.weather-primary span { color: #555a8b; font-size: 12px; text-align: right; max-width: 145px; line-height: 1.5; }
+.weather-details { margin-top: 24px; border-top: 1px solid #cfd2f4; border-bottom: 1px solid #cfd2f4; padding: 17px 0; }
+.weather-details span { color: #777aa7; font-size: 10px; }
+.weather-details strong { font-size: 14px; color: #292f7e; }
+.weather-time, .weather-note, .weather-source { color: #777ca7; font-size: 10px; line-height: 1.6; }
+.weather-time { margin: 14px 0 0; }
+.weather-note--error { color: #8c354a; }
+.weather-source { padding-top: 13px; border-top: 1px solid #cfd2f4; margin-top: 18px; }
+.about { max-width: 1430px; margin: 32px auto 65px; padding: 36px 4.5% 0; }
+.about__intro { display: flex; justify-content: space-between; gap: 15px; align-items: end; margin-bottom: 18px; }
+.about h2 { font-size: 37px; }
+.about__items { gap: 16px; }
+.about__items article { border: 1px solid #e6e6eb; background: white; padding: 24px; border-radius: 13px; }
+.about__number { font-size: 12px; color: var(--accent); font-weight: 850; }
+.about__items h3 { margin: 22px 0 8px; font-size: 14px; letter-spacing: -.15px; }
+.about__items p { color: #848693; font-size: 11px; line-height: 1.75; margin: 0; max-width: 310px; }
+.site-footer { background: #efeff0; border-top: 1px solid #e2e2e5; padding: 30px max(4.5%, calc((100% - 1300px) / 2)) 28px; }
+.footer-top { border-bottom: 1px solid #d9d9dd; padding-bottom: 24px; }
+.footer-brand { font-size: 28px; }
+.footer-top > span:nth-child(2) { font-size: 12px; color: #868893; }
+.footer-top a { font-size: 11px; color: var(--accent); text-decoration: none; font-weight: 750; }
+.footer-bottom { color: #888a95; padding-top: 20px; font-size: 10px; line-height: 1.8; }
+.school-notice { font-size: 10px; color: #9b9ca7; line-height: 1.7; max-width: 900px; margin: 15px 0 0; }
+@media (max-width: 1050px) {
+ .hero__decoration { opacity: .65; }
+ .hero h1 { font-size: clamp(60px, 8vw, 100px); }
+ .content-grid { gap: 14px; }
+ .games-section { padding: 21px; }
+ .spotlight, .weather-panel { padding: 20px; }
+}
+@media (max-width: 900px) {
+ .hero__decoration { right: 5%; width: 35%; top: 65px; bottom: 180px; }
+ .content-grid { padding-top: 0; }
+ .side-column { margin-top: 0; }
+ .spotlight .club { flex-direction: row; align-items: center; }
+ .spotlight .club--away { flex-direction: row-reverse; }
+}
+@media (max-width: 640px) {
+ .site-header { gap: 12px; padding: 16px 5%; flex-wrap: wrap; }
+ .brand__name { font-size: 19px; }
+ .main-nav { order: 3; width: 100%; margin-left: 0; padding-top: 10px; border-top: 1px solid #e3e3e9; }
+ .header-right { border: 0; padding-left: 0; margin-left: auto; }
+ .header-live { padding: 7px 8px; }
+ .hero { padding: 51px 5% 25px; min-height: 0; display: block; }
+ .hero__decoration { display: none; }
+ .hero h1 { font-size: clamp(53px, 11.3vw, 77px); margin-top: 22px; letter-spacing: -.075em; }
+ .hero__intro { font-size: 13px; }
+ .hero__hint { font-size: 10px; }
+ .hero__summary { margin-top: 34px; padding: 9px; border-radius: 10px; }
+ .metric { padding: 12px 9px; }
+ .metric strong { font-size: 24px; }
+ .metric span { font-size: 9px; }
+ .content-grid { padding: 0 3%; }
+ .games-section { padding: 20px 14px; border-radius: 12px; }
+ .section-heading h2 { font-size: 32px; }
+ .refresh-btn { font-size: 10px; padding: 9px; }
+ .filter-status { font-size: 10px; padding: 9px 10px; }
+ .filter-league { font-size: 10px; }
+ .match-card { padding: 15px 0; }
+ .club__mark { width: 27px; height: 27px; font-size: 8px; }
+ .club__name { font-size: 11px; }
+ .match-card__score { font-size: 17px; min-width: 61px; }
+ .results-heading__caption { max-width: 135px; font-size: 9px; text-align: right; }
+ .side-column { gap: 12px; }
+ .about { margin: 18px auto 45px; padding: 20px 5%; }
+ .about__intro { display: block; }
+ .about h2 { font-size: 31px; }
+ .about__items { gap: 10px; }
+ .about__items article { padding: 18px; }
+ .about__items h3 { margin-top: 13px; }
+ .site-footer { padding: 28px 5%; }
+}
+
+</style>
+  
+</head>
+<body>
+<a class="skip-link" href="#spiele">Direkt zu den Spielen</a>
+<div class="site-shell">
+  <header class="site-header" id="start">
+    <a href="#start" class="brand" aria-label="Touchline — Startseite">
+      <span class="brand__icon" aria-hidden="true"><span></span></span>
+      <span class="brand__name">TOUCHLINE<span class="brand__point">.</span></span>
+    </a>
+    <nav class="main-nav" aria-label="Hauptnavigation">
+      <a href="#spiele">Spiele</a>
+      <a href="#spieltag">Spieltag-Check</a>
+      <a href="#ueber">Über uns</a>
+    </nav>
+    <div class="header-right"><span class="header-live"><span class="pulse"></span><span id="live-signal" aria-live="polite">VERBINDEN …</span></span></div>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero__decoration" aria-hidden="true">
+        <div class="hero__circle"></div>
+        <svg class="hero__ball" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="120" cy="120" r="108" stroke="currentColor" stroke-width="2"/>
+          <path d="M120 67L155 93L143 134L97 134L85 93Z" stroke="currentColor" stroke-width="3"/>
+          <path d="M120 67L120 15M155 93L211 75M143 134L170 188M97 134L70 188M85 93L29 75M120 15L179 27L211 75L227 135L170 188L120 226L70 188L13 135L29 75L61 27L120 15Z" stroke="currentColor" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="hero__content">
+        <p class="eyebrow"><span class="eyebrow__line"></span> DIE PLATTFORM FÜR FRAUENFUSSBALL</p>
+        <h1 id="hero-title">Das Spiel passiert <em>jetzt.</em><br>Sei dabei.</h1>
+        <p class="hero__intro">Ergebnisse, Ansetzungen und echte Live-Daten aus den wichtigsten Wettbewerben. Direkt aus dem Netz. Automatisch aktualisiert.</p>
+        <div class="hero__actions">
+          <a class="primary-link" href="#spiele">Alle Spiele entdecken <span aria-hidden="true">↗</span></a>
+          <span class="hero__hint"><span class="pulse"></span> Ohne Anmeldung. Ohne Verzögerung durch manuelle Einträge.</span>
+        </div>
+      </div>
+      <div class="hero__summary" aria-label="Aktuelle Kennzahlen">
+        <div class="metric"><strong id="live-count">…</strong><span>Spiele live</span></div>
+        <div class="metric"><strong id="total-count">…</strong><span>Spiele im Überblick</span></div>
+        <div class="metric"><strong id="sync-time">–:–</strong><span>Letzter Abruf (MEZ/MESZ)</span></div>
+      </div>
+    </section>
+
+    <div class="content-grid">
+      <section class="games-section" id="spiele" aria-labelledby="games-title">
+        <div class="section-heading"><div><p class="eyebrow eyebrow--section">MATCH CENTER / 01</p><h2 id="games-title">Die Spiele<span class="heading-period">.</span></h2></div><button class="refresh-btn" id="refresh-btn" type="button" aria-label="Daten jetzt erneut laden"><span aria-hidden="true">↻</span> Aktualisieren</button></div>
+        <p class="section-subtitle">Live-Spielstände, aktuelle Ergebnisse und die nächsten Begegnungen – ganz ohne erfundene Daten.</p>
+        <div class="filters" aria-label="Spiele filtern">
+          <div class="filter-row filter-row--status" role="group" aria-label="Spielstatus">
+            <button class="filter-status is-active" data-status="all" aria-pressed="true" type="button">Alle Spiele</button>
+            <button class="filter-status" data-status="live" aria-pressed="false" type="button">Live <span class="filter-dot" aria-hidden="true"></span></button>
+            <button class="filter-status" data-status="finished" aria-pressed="false" type="button">Ergebnisse</button>
+            <button class="filter-status" data-status="upcoming" aria-pressed="false" type="button">Demnächst</button>
+          </div>
+          <div class="filter-row filter-row--league" role="group" aria-label="Wettbewerb">
+            <button class="filter-league is-active" data-league="all" aria-pressed="true" type="button">Alle Ligen</button>
+            <button class="filter-league" data-league="eng.w.1" aria-pressed="false" type="button">WSL</button>
+            <button class="filter-league" data-league="usa.nwsl" aria-pressed="false" type="button">NWSL</button>
+            <button class="filter-league" data-league="uefa.wchampions" aria-pressed="false" type="button">Champions League</button>
+          </div>
+          <label class="search-box"><span class="search-box__icon" aria-hidden="true">⌕</span><span class="sr-only">Team suchen</span><input id="search-teams" type="search" placeholder="Team suchen …" autocomplete="off"></label>
+        </div>
+        <div class="results-heading"><h3>Spielübersicht <span class="result-count" id="filtered-count">…</span></h3><span class="results-heading__caption">Zeitraum: letzte 7 / nächste 21 Tage</span></div>
+        <p id="sports-message" class="notice" role="status" aria-live="polite" hidden></p>
+        <div class="match-list" id="match-list" aria-live="polite" aria-busy="false"><div class="empty-state">Spielpläne werden live abgerufen …</div></div>
+        <button class="show-more" id="show-more" type="button" hidden>Mehr Spiele anzeigen ↓</button>
+      </section>
+
+      <aside class="side-column" aria-label="Zusätzliche Live-Informationen">
+        <section class="spotlight" aria-labelledby="spotlight-title">
+          <div class="panel-topline"><span class="panel-index">IM FOKUS / 02</span><span class="little-star" aria-hidden="true">✳</span></div>
+          <h2 id="spotlight-title">Auf dem Radar<span class="heading-period">.</span></h2>
+          <p class="panel-desc">Laufendes Spiel oder nächste angesetzte Partie aus unseren drei Wettbewerben.</p>
+          <div id="featured-match" class="featured-match" aria-live="polite"><p class="placeholder">Nächstes Spiel wird geladen …</p></div>
+        </section>
+        <section class="weather-panel" id="spieltag" aria-labelledby="weather-title">
+          <div class="panel-topline"><span class="panel-index">SPIELTAG-CHECK / 03</span><span class="weather-symbol" id="weather-icon" aria-hidden="true">◌</span></div>
+          <h2 id="weather-title">Fußballwetter<span class="heading-period">.</span></h2>
+          <p class="weather-location"><span aria-hidden="true">⌖</span> Referenzort München, Deutschland</p>
+          <p class="weather-caption">Aktuelle Wetterlage an einem beispielhaften Fußballstandort – nicht die Vorhersage für ein bestimmtes Spiel.</p>
+          <div class="weather-primary"><strong id="weather-temp">–°</strong><span id="weather-desc">Wetter wird geladen …</span></div>
+          <div class="weather-details"><div><span>Wind</span><strong id="weather-wind">–</strong></div><div><span>Niederschlag</span><strong id="weather-rain">–</strong></div></div>
+          <p class="weather-time">Datenzeit: <span id="weather-time">–</span></p>
+          <p id="weather-note" class="weather-note" aria-live="polite">Wetterdaten werden geladen …</p>
+          <p class="weather-source">Wetterdaten: <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a></p>
+        </section>
+      </aside>
+    </div>
+    <section class="about" id="ueber" aria-labelledby="about-title">
+      <div class="about__intro"><p class="eyebrow eyebrow--section">MEHR ALS EIN SCORE / 04</p><h2 id="about-title">Alles, was zählt<span class="heading-period">.</span></h2></div>
+      <div class="about__items"><article><span class="about__number">01 /</span><h3>Drei Wettbewerbe</h3><p>Women’s Super League, NWSL und UEFA Women’s Champions League auf einen Blick.</p></article><article><span class="about__number">02 /</span><h3>Immer neu geladen</h3><p>Spielstände werden beim Besuch und danach minütlich abgefragt. Wetterdaten alle zehn Minuten.</p></article><article><span class="about__number">03 /</span><h3>Klare Quellen</h3><p>Spielinformationen stammen aus öffentlichen ESPN-Endpunkten, das Wetter von Open-Meteo.</p></article></div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-top"><span class="footer-brand">TOUCHLINE<span class="brand__point">.</span></span><span>Frauenfußball verdient Aufmerksamkeit.</span><a href="#start">Nach oben ↑</a></div>
+    <div class="footer-bottom"><span>© <span id="year"></span> TOUCHLINE · Ein fiktives Studienprojekt</span><span>Spieldaten: <a href="https://www.espn.com/soccer/" target="_blank" rel="noopener noreferrer">ESPN</a> (öffentliche, nicht offiziell dokumentierte Schnittstelle) · Wetter: <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a> (CC BY 4.0)</span></div>
+    <p class="school-notice">Studienprojekt der Kunstschule Wandsbek, keine offizielle Seite. Kein Angebot von ESPN, der UEFA oder den genannten Ligen. Zeiten in deutscher Ortszeit (MEZ/MESZ). Live-Daten können sich verzögern oder zeitweise ausfallen.</p>
+  </footer>
+</div>
+<script>
+/* TOUCHLINE — gemeinsamer, echter Daten-Layer für Variante A und B.
+   ESPN: undokumentierter öffentlicher Endpunkt (ohne Schlüssel).
+   Open-Meteo: aktuelle stündlich aktualisierte Wetterwerte (CC BY 4.0).
+   Keine Demo-Ergebnisse, keine festen Spielstände im Code. */
+(() => {
+  'use strict';
+
+  const LEAGUES = [
+    { id: 'eng.w.1', name: 'Women’s Super League', short: 'WSL' },
+    { id: 'usa.nwsl', name: 'National Women’s Soccer League', short: 'NWSL' },
+    { id: 'uefa.wchampions', name: 'UEFA Women’s Champions League', short: 'UWCL' }
+  ];
+  const ESPN_BASE = 'https://site.api.espn.com/apis/site/v2/sports/soccer/';
+  const WEATHER_URL = 'https://api.open-meteo.com/v1/forecast?latitude=48.1374&longitude=11.5755&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,weather_code,is_day&timezone=Europe%2FBerlin';
+  const state = {
+    matches: [], league: 'all', status: 'all', term: '', expanded: false,
+    failedLeagues: [], successfulLeagues: 0, lastSportsLoad: null,
+    fetching: false
+  };
+  const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => [...document.querySelectorAll(sel)];
+  const el = (tag, className, text) => {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = String(text);
+    return node;
+  };
+  const pad = (n) => String(n).padStart(2, '0');
+  const dateKey = (d) => `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+  const dateRange = () => {
+    const start = new Date(); start.setDate(start.getDate() - 7);
+    const end = new Date(); end.setDate(end.getDate() + 21);
+    return `${dateKey(start)}-${dateKey(end)}`;
+  };
+  const shortDate = (date) => new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: 'short', timeZone: 'Europe/Berlin' }).format(date);
+  const longDate = (date) => new Intl.DateTimeFormat('de-DE', { weekday: 'short', day: '2-digit', month: 'short', timeZone: 'Europe/Berlin' }).format(date);
+  const clock = (date) => new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Berlin' }).format(date);
+  const escapeHTML = (value) => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  async function fetchJSON(url) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 11000);
+    try {
+      const response = await fetch(url, { cache: 'no-store', signal: controller.signal, headers: { 'Accept': 'application/json' } });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.json();
+    } finally { clearTimeout(timer); }
+  }
+
+  function normalizeMatch(event, league) {
+    const comp = event?.competitions?.[0];
+    const members = comp?.competitors;
+    if (!Array.isArray(members) || members.length < 2) return null;
+    const home = members.find(c => c.homeAway === 'home') ?? members[0];
+    const away = members.find(c => c.homeAway === 'away') ?? members.find(c => c !== home);
+    if (!away) return null;
+    const date = new Date(event.date || comp.date);
+    if (Number.isNaN(date.getTime())) return null;
+    const status = event.status || comp.status || {};
+    const phase = status.type?.state === 'in' ? 'live'
+      : status.type?.state === 'post' ? 'finished' : 'upcoming';
+    return {
+      id: String(event.id ?? comp.id ?? `${league.id}-${date.getTime()}`),
+      league: league.id, leagueShort: league.short,
+      home: String(home.team?.displayName || home.team?.shortDisplayName || 'Heimteam'),
+      away: String(away.team?.displayName || away.team?.shortDisplayName || 'Auswärtsteam'),
+      homeShort: String(home.team?.abbreviation || initials(home.team?.displayName)),
+      awayShort: String(away.team?.abbreviation || initials(away.team?.displayName)),
+      homeScore: home.score == null ? '–' : String(home.score),
+      awayScore: away.score == null ? '–' : String(away.score),
+      date, phase, detail: String(status.type?.shortDetail || status.type?.detail || ''),
+      venue: String(comp.venue?.fullName || '')
+    };
+  }
+  const initials = (name) => (name || '?').split(/\s+/).slice(0, 2).map(s => s[0]).join('').toUpperCase();
+  const scoreLabel = (m) => m.phase === 'upcoming' ? clock(m.date) : `${m.homeScore} : ${m.awayScore}`;
+  const phaseLabel = (m) => m.phase === 'live' ? (m.detail || 'LIVE')
+    : m.phase === 'finished' ? 'Abpfiff' : `${shortDate(m.date)} · ${clock(m.date)}`;
+
+  function sortMatches(matches) {
+    const priority = { live: 0, upcoming: 1, finished: 2 };
+    return [...matches].sort((a, b) => {
+      if (priority[a.phase] !== priority[b.phase]) return priority[a.phase] - priority[b.phase];
+      return a.phase === 'finished' ? b.date - a.date : a.date - b.date;
+    });
+  }
+
+  function showSportsStatus(text, type = 'info') {
+    const node = $('#sports-message');
+    node.textContent = text;
+    node.className = `notice notice--${type}`;
+    node.hidden = !text;
+  }
+  function stat(id, value) { $(id).textContent = String(value); }
+
+  function matchCard(m, featured = false) {
+    const card = el('article', `match-card match-card--${m.phase}${featured ? ' match-card--featured' : ''}`);
+    card.innerHTML = `
+      <div class="match-card__meta">
+        <span class="match-card__league">${escapeHTML(m.leagueShort)}</span>
+        <span class="match-card__date">${escapeHTML(featured ? longDate(m.date) : shortDate(m.date))}</span>
+        <span class="match-card__phase ${m.phase === 'live' ? 'is-live' : ''}">${m.phase === 'live' ? '<span class="pulse"></span>' : ''}${escapeHTML(phaseLabel(m))}</span>
+      </div>
+      <div class="match-card__main">
+        <div class="club club--home"><span class="club__mark" aria-hidden="true">${escapeHTML(m.homeShort.slice(0, 3))}</span><span class="club__name">${escapeHTML(m.home)}</span></div>
+        <span class="match-card__score" aria-label="${m.phase === 'upcoming' ? 'Anstoß' : 'Spielstand'} ${escapeHTML(scoreLabel(m))}">${escapeHTML(scoreLabel(m))}</span>
+        <div class="club club--away"><span class="club__mark" aria-hidden="true">${escapeHTML(m.awayShort.slice(0, 3))}</span><span class="club__name">${escapeHTML(m.away)}</span></div>
+      </div>
+      ${featured ? `<p class="match-card__venue">${escapeHTML(m.venue ? `Spielort: ${m.venue}` : 'Details direkt aus den Spieldaten')}</p>` : ''}`;
+    return card;
+  }
+
+  function renderFeatured() {
+    const target = $('#featured-match');
+    target.replaceChildren();
+    if (!state.successfulLeagues && state.fetching) {
+      target.append(el('p', 'placeholder', 'Nächstes Spiel wird geladen …'));
+      return;
+    }
+    if (!state.successfulLeagues) {
+      target.append(el('p', 'placeholder', 'Die Spieldaten sind gerade nicht erreichbar.'));
+      return;
+    }
+    const featured = sortMatches(state.matches).find(m => m.phase === 'live' || m.phase === 'upcoming');
+    if (!featured) {
+      target.append(el('p', 'placeholder', 'Aktuell keine laufenden oder anstehenden Partien im abgefragten Zeitraum.'));
+      return;
+    }
+    target.append(matchCard(featured, true));
+  }
+
+  function renderMatches() {
+    const container = $('#match-list');
+    const available = sortMatches(state.matches.filter(m =>
+      (state.league === 'all' || m.league === state.league) &&
+      (state.status === 'all' || m.phase === state.status) &&
+      (!state.term || `${m.home} ${m.away}`.toLocaleLowerCase('de-DE').includes(state.term))
+    ));
+    container.replaceChildren();
+    if (state.fetching && !state.successfulLeagues) {
+      container.append(el('div', 'empty-state', 'Spielpläne werden live abgerufen …'));
+    } else if (!state.successfulLeagues) {
+      container.append(el('div', 'empty-state', 'Spiele derzeit nicht verfügbar. Bitte später erneut versuchen.'));
+    } else if (available.length === 0) {
+      container.append(el('div', 'empty-state', 'Für diese Auswahl gibt es im aktuellen Zeitraum keine Spiele. Wähle einen anderen Filter.'));
+    } else {
+      available.slice(0, state.expanded ? 24 : 8).forEach(match => container.append(matchCard(match)));
+    }
+    const more = $('#show-more');
+    more.hidden = available.length <= 8;
+    more.textContent = state.expanded ? 'Weniger anzeigen ↑' : `Alle ${Math.min(available.length, 24)} Spiele anzeigen ↓`;
+    stat('#filtered-count', state.fetching && !state.successfulLeagues ? '…' : available.length);
+    $$('.filter-status').forEach(btn => {
+      const active = btn.dataset.status === state.status;
+      btn.classList.toggle('is-active', active);
+      btn.setAttribute('aria-pressed', String(active));
+    });
+    $$('.filter-league').forEach(btn => {
+      const active = btn.dataset.league === state.league;
+      btn.classList.toggle('is-active', active);
+      btn.setAttribute('aria-pressed', String(active));
+    });
+  }
+
+  function renderStats() {
+    stat('#live-count', state.fetching && !state.successfulLeagues ? '…' : state.matches.filter(m => m.phase === 'live').length);
+    stat('#total-count', state.fetching && !state.successfulLeagues ? '…' : state.matches.length);
+    stat('#sync-time', state.lastSportsLoad ? clock(state.lastSportsLoad) : '–:–');
+    const live = state.matches.filter(m => m.phase === 'live').length;
+    const signal = $('#live-signal');
+    signal.textContent = !state.successfulLeagues ? (state.fetching ? 'VERBINDEN …' : 'DATEN OFFLINE')
+      : live > 0 ? `${live} ${live === 1 ? 'SPIEL LIVE' : 'SPIELE LIVE'}` : 'DATEN AKTUELL';
+    document.body.classList.toggle('has-live-match', live > 0);
+  }
+
+  async function loadSports() {
+    if (state.fetching) return;
+    state.fetching = true;
+    $('#refresh-btn').disabled = true;
+    const initial = state.lastSportsLoad === null;
+    if (initial) { renderFeatured(); renderMatches(); renderStats(); }
+    const range = dateRange();
+    const responses = await Promise.allSettled(LEAGUES.map(async league => {
+      const json = await fetchJSON(`${ESPN_BASE}${league.id}/scoreboard?dates=${range}&limit=150`);
+      if (!Array.isArray(json.events)) throw new Error('Unerwartetes Datenformat');
+      return { league, events: json.events };
+    }));
+    const found = [];
+    const failures = [];
+    let successes = 0;
+    responses.forEach((entry, idx) => {
+      if (entry.status === 'fulfilled') {
+        successes++;
+        for (const event of entry.value.events) {
+          const match = normalizeMatch(event, entry.value.league);
+          if (match) found.push(match);
+        }
+      } else failures.push(LEAGUES[idx].short);
+    });
+    state.matches = [...new Map(found.map(m => [`${m.league}/${m.id}`, m])).values()];
+    state.successfulLeagues = successes;
+    state.failedLeagues = failures;
+    state.lastSportsLoad = successes ? new Date() : null;
+    state.fetching = false;
+    $('#refresh-btn').disabled = false;
+    if (!successes) showSportsStatus('Die Fußball-Daten konnten nicht geladen werden. Bitte Verbindung prüfen oder erneut versuchen.', 'error');
+    else if (failures.length) showSportsStatus(`Einige Wettbewerbe sind gerade nicht erreichbar: ${failures.join(', ')}. Andere Daten werden angezeigt.`, 'warning');
+    else showSportsStatus('', 'info');
+    renderFeatured(); renderMatches(); renderStats();
+  }
+
+  function weatherDescription(code) {
+    if (code === 0) return ['Klarer Himmel', '☀'];
+    if ([1, 2].includes(code)) return ['Leicht bewölkt', '⛅'];
+    if (code === 3) return ['Bedeckt', '☁'];
+    if ([45, 48].includes(code)) return ['Nebel', '≋'];
+    if (code >= 51 && code <= 67) return ['Regen / Niesel', '☂'];
+    if (code >= 71 && code <= 77) return ['Schnee', '❄'];
+    if (code >= 80 && code <= 82) return ['Regenschauer', '☂'];
+    if (code >= 95) return ['Gewitter', 'ϟ'];
+    return ['Wechselhaft', '◌'];
+  }
+  async function loadWeather() {
+    const notice = $('#weather-note');
+    if (!notice.dataset.loaded) {
+      notice.textContent = 'Wetterdaten werden geladen …';
+      notice.className = 'weather-note';
+    }
+    try {
+      const data = await fetchJSON(WEATHER_URL);
+      const c = data.current;
+      if (!c || !Number.isFinite(c.temperature_2m) || !Number.isFinite(c.wind_speed_10m)) throw new Error('Ungültige Wetterdaten');
+      const [desc, symbol] = weatherDescription(c.weather_code);
+      $('#weather-temp').textContent = `${Math.round(c.temperature_2m)}°`;
+      $('#weather-desc').textContent = desc;
+      $('#weather-icon').textContent = symbol;
+      $('#weather-wind').textContent = `${Math.round(c.wind_speed_10m)} km/h`;
+      $('#weather-rain').textContent = Number.isFinite(c.precipitation) ? `${c.precipitation.toLocaleString('de-DE', { maximumFractionDigits: 1 })} mm` : '–';
+      $('#weather-time').textContent = c.time ? c.time.replace('T', ' · ') + ' Uhr' : 'Zeit unbekannt';
+      const wet = (Number(c.precipitation) > 0 || (c.weather_code >= 51 && c.weather_code <= 82) || c.weather_code >= 95);
+      document.body.classList.toggle('is-rainy', wet);
+      notice.dataset.loaded = 'true';
+      notice.textContent = 'Aktuelle Mess- und Modelldaten';
+      notice.className = 'weather-note weather-note--ok';
+    } catch (err) {
+      document.body.classList.remove('is-rainy');
+      $('#weather-temp').textContent = '–°';
+      $('#weather-desc').textContent = 'Wetter derzeit nicht erreichbar';
+      $('#weather-icon').textContent = '◌';
+      $('#weather-wind').textContent = '–';
+      $('#weather-rain').textContent = '–';
+      $('#weather-time').textContent = '–';
+      notice.dataset.loaded = '';
+      notice.textContent = 'Verbindung fehlgeschlagen – bei der nächsten Aktualisierung erneut versuchen.';
+      notice.className = 'weather-note weather-note--error';
+    }
+  }
+
+  $$('.filter-status').forEach(button => button.addEventListener('click', () => {
+    state.status = button.dataset.status; state.expanded = false; renderMatches();
+  }));
+  $$('.filter-league').forEach(button => button.addEventListener('click', () => {
+    state.league = button.dataset.league; state.expanded = false; renderMatches();
+  }));
+  $('#search-teams').addEventListener('input', event => {
+    state.term = event.target.value.trim().toLocaleLowerCase('de-DE'); state.expanded = false; renderMatches();
+  });
+  $('#show-more').addEventListener('click', () => { state.expanded = !state.expanded; renderMatches(); });
+  $('#refresh-btn').addEventListener('click', () => { loadSports(); loadWeather(); });
+  $('#year').textContent = new Date().getFullYear();
+
+  loadSports();
+  loadWeather();
+  window.setInterval(() => { if (!document.hidden) loadSports(); }, 60000);
+  window.setInterval(() => { if (!document.hidden) loadWeather(); }, 600000);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && (!state.lastSportsLoad || Date.now() - state.lastSportsLoad.getTime() > 60000)) loadSports();
+  });
+})();
+
+</script>
+</body>
+</html>
